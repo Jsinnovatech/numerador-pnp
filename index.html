@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Numerador de Documentos - DEPSICP DIVSICPAL DIRREHUM PNP 2026</title>
+    
+    <!-- SCRIPT CON MÚLTIPLES CDNs DE SHEETJS COMO RESPALDO -->
+    <script>
+        (function() {
+            const cdns = [
+                'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',
+                'https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js',
+                'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'
+            ];
+            
+            let currentIndex = 0;
+            
+            function tryLoadScript() {
+                if (currentIndex >= cdns.length) {
+                    console.error('❌ No se pudo cargar SheetJS desde ningún CDN');
+                    return;
+                }
+                
+                const script = document.createElement('script');
+                script.src = cdns[currentIndex];
+                script.async = false;
+                
+                script.onload = function() {
+                    console.log('✅ SheetJS cargado desde:', cdns[currentIndex]);
+                };
+                
+                script.onerror = function() {
+                    console.warn('⚠️ Falló CDN:', cdns[currentIndex]);
+                    currentIndex++;
+                    tryLoadScript();
+                };
+                
+                document.head.appendChild(script);
+            }
+            
+            tryLoadScript();
+        })();
+    </script>
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #1a4d2e 0%, #2d5f3f 100%); min-height: 100vh; padding: 20px; }
+        .container { max-width: 1600px; margin: 0 auto; background: white; border-radius: 12px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3); overflow: hidden; }
+        .header { background: linear-gradient(135deg, #1a4d2e 0%, #2d5f3f 100%); color: white; padding: 30px; text-align: center; border-bottom: 4px solid #ffd700; }
+        .header h1 { font-size: 2em; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
+        .header p { font-size: 1em; opacity: 0.95; }
+        .status-bar { background: #f8f9fa; padding: 12px 30px; border-bottom: 2px solid #e0e0e0; display: flex; justify-content: space-between; align-items: center; }
+        .status-indicator { display: flex; align-items: center; gap: 10px; }
+        .status-dot { width: 12px; height: 12px; border-radius: 50%; background: #ffc107; animation: pulse 2s infinite; }
+        .status-dot.connected { background: #28a745; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .content { padding: 30px; }
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: linear-gradient(135deg, #1a4d2e 0%, #2d5f3f 100%); color: white; padding: 25px; border-radius: 10px; text-align: center; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); }
+        .stat-card.secondary { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); }
+        .stat-card h3 { font-size: 2.2em; margin-bottom: 5px; font-weight: 700; }
+        .stat-card p { font-size: 0.85em; opacity: 0.95; text-transform: uppercase; letter-spacing: 0.5px; }
+        .form-section { background: #f8f9fa; padding: 30px; border-radius: 10px; margin-bottom: 30px; border: 2px solid #e0e0e0; }
+        .form-section h2 { color: #1a4d2e; margin-bottom: 25px; font-size: 1.4em; border-bottom: 3px solid #1a4d2e; padding-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 20px; }
+        .form-group { display: flex; flex-direction: column; }
+        .form-group.full-width { grid-column: 1 / -1; }
+        label { font-weight: 600; color: #333; margin-bottom: 8px; font-size: 0.95em; display: flex; align-items: center; gap: 5px; }
+        .required { color: #dc3545; }
+        input, textarea, select { padding: 14px; border: 2px solid #ddd; border-radius: 8px; font-size: 1em; transition: all 0.3s; font-family: inherit; background: white; }
+        input[readonly] { background: #e9ecef; cursor: pointer; }
+        input[readonly]:hover { border-color: #1a4d2e; }
+        select { cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 9L1 4h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 40px; appearance: none; }
+        input:focus, textarea:focus, select:focus { outline: none; border-color: #1a4d2e; box-shadow: 0 0 0 4px rgba(26, 77, 46, 0.1); }
+        textarea { resize: vertical; min-height: 90px; }
+        #otroEfectivoContainer { display: none; margin-top: 10px; }
+        #otroEfectivoContainer input { background: #fffacd; border-color: #ffc107; }
+        .tipo-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.85em; font-weight: 600; margin-left: 10px; }
+        .badge-OFICIO { background: #007bff; color: white; }
+        .badge-INFORME { background: #28a745; color: white; }
+        .badge-ELEVACIÓN { background: #ffc107; color: #333; }
+        .badge-MEMORÁNDUM { background: #6f42c1; color: white; }
+        .badge-MEMORÁNDUMS-MÚLTIPLES { background: #e83e8c; color: white; }
+        .badge-PASE { background: #20c997; color: white; }
+        .badge-DECRETO { background: #fd7e14; color: white; }
+        .button-group { display: flex; gap: 15px; margin-top: 25px; }
+        button { padding: 14px 35px; border: none; border-radius: 8px; font-size: 1.05em; font-weight: 600; cursor: pointer; transition: all 0.3s; text-transform: uppercase; letter-spacing: 0.5px; }
+        .btn-primary { background: linear-gradient(135deg, #1a4d2e 0%, #2d5f3f 100%); color: white; flex: 1; box-shadow: 0 4px 10px rgba(26, 77, 46, 0.3); }
+        .btn-primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(26, 77, 46, 0.4); }
+        .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+        .btn-secondary { background: #6c757d; color: white; box-shadow: 0 4px 10px rgba(108, 117, 125, 0.3); }
+        .btn-secondary:hover { background: #5a6268; }
+        .btn-export { background: #28a745; color: white; padding: 12px 25px; font-size: 0.95em; box-shadow: 0 4px 10px rgba(40, 167, 69, 0.3); }
+        .btn-export:hover { background: #218838; }
+        .btn-export:disabled { background: #6c757d; cursor: not-allowed; opacity: 0.6; }
+        .btn-stats { background: #ffc107; color: #333; padding: 12px 25px; font-size: 0.95em; box-shadow: 0 4px 10px rgba(255, 193, 7, 0.3); }
+        .btn-stats:hover { background: #e0a800; }
+        .table-section { margin-top: 30px; }
+        .table-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; }
+        .table-header h2 { color: #1a4d2e; font-size: 1.4em; }
+        .actions-bar { display: flex; gap: 10px; flex-wrap: wrap; }
+        .table-container { overflow-x: auto; border-radius: 10px; border: 2px solid #e0e0e0; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; background: white; }
+        thead { background: linear-gradient(135deg, #1a4d2e 0%, #2d5f3f 100%); color: white; }
+        th { padding: 16px; text-align: left; font-weight: 600; text-transform: uppercase; font-size: 0.85em; letter-spacing: 0.5px; white-space: nowrap; }
+        td { padding: 16px; border-bottom: 1px solid #e0e0e0; }
+        tbody tr:hover { background: #f8f9fa; }
+        tbody tr:last-child td { border-bottom: none; }
+        .actions { display: flex; gap: 8px; }
+        .btn-action { padding: 8px 14px; font-size: 0.85em; border-radius: 6px; border: none; cursor: pointer; transition: all 0.2s; font-weight: 600; }
+        .btn-delete { background: #dc3545; color: white; }
+        .btn-delete:hover { background: #c82333; transform: scale(1.05); }
+        .empty-state { text-align: center; padding: 80px 20px; color: #6c757d; }
+        .empty-state svg { width: 100px; height: 100px; margin-bottom: 20px; opacity: 0.4; }
+        .empty-state h3 { font-size: 1.5em; margin-bottom: 10px; }
+        .numero-documento { font-weight: 700; color: #1a4d2e; font-size: 1.05em; }
+        .numero-column { font-weight: 700; color: #0066cc; font-size: 1.2em; }
+        .toast { position: fixed; top: 20px; right: 20px; background: #28a745; color: white; padding: 16px 28px; border-radius: 8px; box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3); z-index: 1000; animation: slideIn 0.3s ease; display: flex; align-items: center; gap: 10px; }
+        .toast.error { background: #dc3545; }
+        .toast.warning { background: #ffc107; color: #333; }
+        @keyframes slideIn { from { transform: translateX(400px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .pagination { display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 20px; flex-wrap: wrap; }
+        .pagination button { padding: 10px 16px; border: 2px solid #1a4d2e; background: white; color: #1a4d2e; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.2s; font-size: 0.95em; }
+        .pagination button:hover:not(:disabled) { background: #1a4d2e; color: white; }
+        .pagination button.active { background: #1a4d2e; color: white; }
+        .pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); z-index: 2000; justify-content: center; align-items: center; }
+        .modal.active { display: flex; }
+        .modal-content { background: white; border-radius: 12px; padding: 30px; max-width: 900px; width: 90%; max-height: 85vh; overflow-y: auto; position: relative; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 3px solid #1a4d2e; }
+        .modal-header h2 { color: #1a4d2e; font-size: 1.5em; margin: 0; }
+        .modal-close { font-size: 30px; cursor: pointer; color: #6c757d; background: none; border: none; padding: 0; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
+        .modal-close:hover { color: #dc3545; }
+        .search-box { margin-bottom: 20px; display: flex; gap: 10px; }
+        .search-box input { flex: 1; padding: 12px; border: 2px solid #1a4d2e; border-radius: 8px; font-size: 1em; }
+        .search-box button { padding: 12px 25px; background: #1a4d2e; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; }
+        .search-box button:hover { background: #2d5f3f; }
+        .legend { display: flex; gap: 30px; justify-content: center; margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; }
+        .legend-item { display: flex; align-items: center; gap: 8px; font-size: 0.95em; }
+        .legend-box { width: 30px; height: 30px; border-radius: 6px; border: 2px solid #ddd; }
+        .legend-box.available { background: #28a745; }
+        .legend-box.used { background: #dc3545; position: relative; }
+        .legend-box.used::after { content: '✕'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 1.2em; font-weight: bold; }
+        .numbers-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 10px; max-height: 500px; overflow-y: auto; padding: 10px; }
+        .number-box { width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; border: 2px solid #ddd; border-radius: 8px; font-weight: bold; font-size: 1.1em; cursor: pointer; transition: all 0.2s; background: white; }
+        .number-box.available { background: #d4edda; border-color: #28a745; color: #155724; }
+        .number-box.available:hover { background: #28a745; color: white; transform: scale(1.1); }
+        .number-box.used { background: #f8d7da; border-color: #dc3545; color: #721c24; cursor: not-allowed; position: relative; }
+        .number-box.used::after { content: '✕'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 1.5em; color: #dc3545; font-weight: bold; }
+        .loading { text-align: center; padding: 20px; color: #6c757d; }
+        .spinner { border: 3px solid #f3f3f3; border-top: 3px solid #1a4d2e; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .tabs { display: flex; gap: 10px; margin-bottom: 25px; border-bottom: 3px solid #e0e0e0; }
+        .tab-button { padding: 15px 30px; background: transparent; border: none; border-bottom: 3px solid transparent; color: #6c757d; font-weight: 600; cursor: pointer; transition: all 0.3s; font-size: 1em; text-transform: uppercase; letter-spacing: 0.5px; }
+        .tab-button:hover { color: #1a4d2e; }
+        .tab-button.active { color: #1a4d2e; border-bottom-color: #1a4d2e; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-top: 20px; }
+        .stat-item { background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #1a4d2e; cursor: pointer; transition: all 0.3s; }
+        .stat-item:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2); }
+        .stat-item h4 { color: #6c757d; font-size: 0.9em; margin-bottom: 8px; }
+        .stat-item p { font-size: 2em; color: #1a4d2e; font-weight: 700; }
+        .month-detail { background: white; border: 2px solid #1a4d2e; border-radius: 10px; padding: 25px; margin-top: 20px; }
+        .month-detail h3 { color: #1a4d2e; margin-bottom: 20px; font-size: 1.4em; border-bottom: 2px solid #1a4d2e; padding-bottom: 10px; }
+        .day-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; }
+        .day-item { background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #0066cc; }
+        .day-item h5 { color: #1a4d2e; margin-bottom: 10px; font-size: 1.1em; }
+        .day-item .type-count { display: flex; justify-content: space-between; padding: 5px 0; font-size: 0.9em; color: #555; }
+        @media (max-width: 768px) { .form-grid { grid-template-columns: 1fr; } .button-group { flex-direction: column; } .stats { grid-template-columns: 1fr; } .numbers-grid { grid-template-columns: repeat(auto-fill, minmax(50px, 1fr)); } .number-box { width: 50px; height: 50px; font-size: 0.95em; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📋 Numerador de Documentos Digital</h1>
+            <p>DEPSICP - DIVSICPAL - DIRREHUM PNP 2026</p>
+        </div>
+
+        <div class="status-bar">
+            <div class="status-indicator">
+                <div class="status-dot" id="statusDot"></div>
+                <span id="statusText">Modo Local - Configurar Google Sheets</span>
+            </div>
+            <div>
+                <small id="lastUpdate">Última actualización: --</small>
+            </div>
+        </div>
+
+        <div class="content">
+            <!-- Estadísticas -->
+            <div class="stats">
+                <div class="stat-card">
+                    <h3 id="totalDocumentos">0</h3>
+                    <p>Total Documentos</p>
+                </div>
+                <div class="stat-card secondary">
+                    <h3 id="totalOficio">0</h3>
+                    <p>Oficios</p>
+                </div>
+                <div class="stat-card secondary">
+                    <h3 id="totalInforme">0</h3>
+                    <p>Informes</p>
+                </div>
+                <div class="stat-card secondary">
+                    <h3 id="totalElevacion">0</h3>
+                    <p>Elevaciones</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="documentosHoy">0</h3>
+                    <p>Hoy</p>
+                </div>
+            </div>
+
+            <!-- Formulario -->
+            <div class="form-section">
+                <h2>📝 Registrar Nuevo Documento</h2>
+                <form id="documentoForm">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="tipoDocumento">Tipo de Documento <span class="required">*</span></label>
+                            <select id="tipoDocumento" required onchange="resetNumeroSeleccionado()">
+                                <option value="">-- Seleccione --</option>
+                                <option value="OFICIO">📄 Oficio</option>
+                                <option value="INFORME">📊 Informe</option>
+                                <option value="ELEVACIÓN">⬆️ Elevación</option>
+                                <option value="MEMORÁNDUM">📝 Memorándum</option>
+                                <option value="MEMORÁNDUMS MÚLTIPLES">📝📝 Memorándums Múltiples</option>
+                                <option value="PASE">🎫 Pase</option>
+                                <option value="DECRETO">⚖️ Decreto</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="efectivoSelect">Efectivo PNP (Registra) <span class="required">*</span></label>
+                            <select id="efectivoSelect" required onchange="manejarSeleccionEfectivo()">
+                                <option value="">-- Seleccione Efectivo --</option>
+                                <option value="CONTRERAS RAMOS Shirley Karen">CONTRERAS RAMOS Shirley Karen</option>
+                                <option value="MORALES VIVAS, ESTHALIN EDDEER">MORALES VIVAS, ESTHALIN EDDEER</option>
+                                <option value="SUCLUPE JERI Roxana del Pilar">SUCLUPE JERI Roxana del Pilar</option>
+                                <option value="LLAMPAZO MANDAMIENTO Luis Ricardo">LLAMPAZO MANDAMIENTO Luis Ricardo</option>
+                                <option value="POEMAPE LIRA Elfre Johan">POEMAPE LIRA Elfre Johan</option>
+                                <option value="BRACAMONTE LLANOS, Janet">BRACAMONTE LLANOS, Janet</option>
+                                <option value="GONZALES ILIZARBE Luz">GONZALES ILIZARBE Luz</option>
+                                <option value="PAZ CASTRO William">PAZ CASTRO William</option>
+                                <option value="CURO AGUILAR Ronald">CURO AGUILAR Ronald</option>
+                                <option value="SAAVEDRA LUQUE Sergio Guillermo">SAAVEDRA LUQUE Sergio Guillermo</option>
+                                <option value="LOPEZ BORDA Victor Alfredo">LOPEZ BORDA Victor Alfredo</option>
+                                <option value="VIZCARRA MANRIQUE Katheryne Agripina">VIZCARRA MANRIQUE Katheryne Agripina</option>
+                                <option value="MELGAREJO ALCEDO Elen">MELGAREJO ALCEDO Elen</option>
+                                <option value="PEJERREY LOZANO José">PEJERREY LOZANO José</option>
+                                <option value="MALDONADO BARRIOS Alexander">MALDONADO BARRIOS Alexander</option>
+                                <option value="ESPINOZA EGUSQUIZA Edith Totita">ESPINOZA EGUSQUIZA Edith Totita</option>
+                                <option value="MANCISIDOR VILLAVICENCIO David Eliezer">MANCISIDOR VILLAVICENCIO David Eliezer</option>
+                                <option value="CHAVEZ RIOS Mayk Alexander">CHAVEZ RIOS Mayk Alexander</option>
+                                <option value="SALAS CARRILLO Juan Manuel">SALAS CARRILLO Juan Manuel</option>
+                                <option value="TUESTA LUNA Walter Vicente">TUESTA LUNA Walter Vicente</option>
+                                <option value="MEDINA TICONA Yinmy">MEDINA TICONA Yinmy</option>
+                                <option value="MIRANDA LUNA Juvelio">MIRANDA LUNA Juvelio</option>
+                                <option value="CERVANTES LLANCAY Karen">CERVANTES LLANCAY Karen</option>
+                                <option value="GUTIERREZ BULNES Ruben">GUTIERREZ BULNES Ruben</option>
+                                <option value="MAMANI SUCA Roger">MAMANI SUCA Roger</option>
+                                <option value="ACERO OYARCE Yampol Nando">ACERO OYARCE Yampol Nando</option>
+                                <option value="TESEN SARAVIA Angella Jannette">TESEN SARAVIA Angella Jannette</option>
+                                <option value="CHAVEZ VALLADOLID Jorge">CHAVEZ VALLADOLID Jorge</option>
+                                <option value="OCAS OLIVO Sergio Ernesto">OCAS OLIVO Sergio Ernesto</option>
+                                <option value="REY SANCHEZ VIA RADA Dora Renee">REY SANCHEZ VIA RADA Dora Renee</option>
+                                <option value="MEOÑO CALDERON Brian Jorge">MEOÑO CALDERON Brian Jorge</option>
+                                <option value="CASTRO VALLEJO, Edward Cristian">CASTRO VALLEJO, Edward Cristian</option>
+                                <option value="CORILLOCLLA ARAUJO Daniska Leslye">CORILLOCLLA ARAUJO Daniska Leslye</option>
+                                <option value="CARCASI ARAPA Leonidas">CARCASI ARAPA Leonidas</option>
+                                <option value="DIAZ AMAYA Jose Antonio">DIAZ AMAYA Jose Antonio</option>
+                                <option value="MEZA CABANILLAS Alberto Felipe">MEZA CABANILLAS Alberto Felipe</option>
+                                <option value="OTRO">➕ Otro (especificar)</option>
+                            </select>
+                            <div id="otroEfectivoContainer" class="form-group">
+                                <label for="otroEfectivo">Especificar nombre del efectivo:</label>
+                                <input type="text" id="otroEfectivo" placeholder="Escriba el nombre completo del efectivo">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="numeroDocumento">Numeración de Documentos <span class="required">*</span></label>
+                            <input type="text" id="numeroDocumento" required readonly placeholder="Click para seleccionar número" onclick="abrirSelectorNumeros()">
+                            <input type="hidden" id="numeroSeleccionado">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="referencia">Referencia (HT - SGD) <span class="required">*</span></label>
+                            <input type="text" id="referencia" required placeholder="Ej: HT-2026-001234">
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label for="descripcion">Descripción del Trámite <span class="required">*</span></label>
+                            <textarea id="descripcion" required placeholder="Descripción breve del asunto o motivo del documento..."></textarea>
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label for="destinatario">Dirigido a (Destino) <span class="required">*</span></label>
+                            <input type="text" id="destinatario" required placeholder="Ej: DIRECTOR DE LA DIRREHUM PNP">
+                        </div>
+                    </div>
+
+                    <div class="button-group">
+                        <button type="submit" class="btn-primary" id="btnRegistrar">✅ Registrar Documento</button>
+                        <button type="button" class="btn-secondary" onclick="limpiarFormulario()">🔄 Limpiar</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Tabla de Documentos DEL DÍA -->
+            <div class="table-section">
+                <div class="table-header">
+                    <h2>📅 Documentos Registrados HOY</h2>
+                    <div class="actions-bar">
+                        <button class="btn-stats" onclick="mostrarEstadisticas()">📊 Estadísticas Diarias, Mensuales y Anuales</button>
+                        <button class="btn-export" id="btnExportarExcel" onclick="exportarExcelXLSX()" disabled title="Esperando carga de SheetJS...">⏳ Cargando Excel...</button>
+                    </div>
+                </div>
+
+                <div class="table-container" id="tableContainer">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Cargando documentos de hoy...</p>
+                    </div>
+                </div>
+
+                <!-- Paginación numérica -->
+                <div class="pagination" id="pagination"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Selector de Números -->
+    <div class="modal" id="selectorModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🔢 Seleccione Número - <span id="modalTipo"></span></h2>
+                <button class="modal-close" onclick="cerrarSelectorNumeros()">×</button>
+            </div>
+
+            <div class="search-box">
+                <input type="number" id="searchNumber" placeholder="Escriba un número para buscarlo (1-2000)" min="1" max="2000">
+                <button onclick="buscarNumero()">🔍 Buscar</button>
+            </div>
+
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-box available"></div>
+                    <span>Disponible</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-box used"></div>
+                    <span>Ya usado</span>
+                </div>
+            </div>
+
+            <div class="numbers-grid" id="numbersGrid"></div>
+        </div>
+    </div>
+
+    <!-- Modal de Estadísticas -->
+    <div class="modal" id="statsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📊 Estadísticas del Sistema PNP 2026</h2>
+                <button class="modal-close" onclick="cerrarEstadisticas()">×</button>
+            </div>
+
+            <div class="tabs">
+                <button class="tab-button active" onclick="cambiarTab('diarias')">📅 Diarias</button>
+                <button class="tab-button" onclick="cambiarTab('mensuales')">📆 Mensuales</button>
+                <button class="tab-button" onclick="cambiarTab('anuales')">📊 Anuales</button>
+            </div>
+
+            <div id="statsContent">
+                <div class="tab-content active" id="tab-diarias"></div>
+                <div class="tab-content" id="tab-mensuales"></div>
+                <div class="tab-content" id="tab-anuales"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script>
+        const CONFIG = {
+            MODE: 'GOOGLE_SHEETS',
+            GOOGLE_SHEETS_URL: 'https://script.google.com/macros/s/AKfycbzT3bVB6dTLsVNOrATQf0gCTYBxCIVqw93czRnqfS6jXBaZNRG1-cxIiHWndT26gLOqAQ/exec',
+        };
+
+        let documentos = JSON.parse(localStorage.getItem('documentosPNP2026')) || [];
+        let guardando = false;
+        let numerosUsados = {};
+        let currentPage = 1;
+        const itemsPerPage = 10;
+        let xlsxCargado = false;
+
+        const verificarXLSX = setInterval(function() {
+            if (typeof XLSX !== 'undefined') {
+                xlsxCargado = true;
+                const btnExportar = document.getElementById('btnExportarExcel');
+                btnExportar.disabled = false;
+                btnExportar.textContent = '📥 EXPORTAR EXCEL';
+                btnExportar.title = 'Exportar a Excel con formato profesional';
+                console.log('✅ SheetJS cargado');
+                clearInterval(verificarXLSX);
+            }
+        }, 500);
+
+        setTimeout(function() {
+            if (!xlsxCargado) {
+                const btnExportar = document.getElementById('btnExportarExcel');
+                btnExportar.textContent = '❌ Error Excel';
+                btnExportar.title = 'SheetJS no se pudo cargar';
+                console.error('❌ SheetJS no cargó');
+                clearInterval(verificarXLSX);
+            }
+        }, 10000);
+
+        document.addEventListener('DOMContentLoaded', function() {
+            actualizarEstado();
+            calcularNumerosUsados();
+            cargarDocumentos();
+            actualizarEstadisticas();
+        });
+
+        function actualizarEstado() {
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+            
+            if (CONFIG.MODE === 'GOOGLE_SHEETS' && CONFIG.GOOGLE_SHEETS_URL) {
+                statusDot.classList.add('connected');
+                statusText.textContent = 'Conectado a Google Sheets ✓';
+            } else {
+                statusText.textContent = 'Modo Local - Configurar Google Sheets';
+            }
+        }
+
+        function calcularNumerosUsados() {
+            numerosUsados = {};
+            documentos.forEach(doc => {
+                if (!numerosUsados[doc.tipo]) numerosUsados[doc.tipo] = [];
+                if (doc.numeroSeleccionado) numerosUsados[doc.tipo].push(parseInt(doc.numeroSeleccionado));
+            });
+        }
+
+        function resetNumeroSeleccionado() {
+            document.getElementById('numeroDocumento').value = '';
+            document.getElementById('numeroSeleccionado').value = '';
+        }
+
+        function abrirSelectorNumeros() {
+            const tipo = document.getElementById('tipoDocumento').value;
+            if (!tipo) {
+                mostrarToast('⚠️ Primero seleccione el tipo de documento', 'warning');
+                return;
+            }
+            document.getElementById('modalTipo').textContent = tipo;
+            generarGridNumeros(tipo);
+            document.getElementById('selectorModal').classList.add('active');
+        }
+
+        function cerrarSelectorNumeros() {
+            document.getElementById('selectorModal').classList.remove('active');
+        }
+
+        function generarGridNumeros(tipo) {
+            const grid = document.getElementById('numbersGrid');
+            grid.innerHTML = '';
+            const usados = numerosUsados[tipo] || [];
+
+            for (let i = 1; i <= 2000; i++) {
+                const box = document.createElement('div');
+                box.className = 'number-box';
+                box.textContent = i;
+                box.dataset.numero = i;
+
+                if (usados.includes(i)) {
+                    box.classList.add('used');
+                } else {
+                    box.classList.add('available');
+                    box.onclick = function() { seleccionarNumero(i); };
+                }
+                grid.appendChild(box);
+            }
+        }
+
+        function seleccionarNumero(numero) {
+            document.getElementById('numeroSeleccionado').value = numero;
+            document.getElementById('numeroDocumento').value = `Número ${numero}`;
+            cerrarSelectorNumeros();
+            mostrarToast(`✅ Número ${numero} seleccionado`);
+        }
+
+        function buscarNumero() {
+            const numero = parseInt(document.getElementById('searchNumber').value);
+            if (!numero || numero < 1 || numero > 2000) {
+                mostrarToast('⚠️ Ingrese un número entre 1 y 2000', 'warning');
+                return;
+            }
+            const box = document.querySelector(`[data-numero="${numero}"]`);
+            if (box) {
+                box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                box.style.animation = 'pulse 1s';
+                setTimeout(() => { box.style.animation = ''; }, 1000);
+            }
+        }
+
+        function manejarSeleccionEfectivo() {
+            const select = document.getElementById('efectivoSelect');
+            const otroContainer = document.getElementById('otroEfectivoContainer');
+            const otroInput = document.getElementById('otroEfectivo');
+            
+            if (select.value === 'OTRO') {
+                otroContainer.style.display = 'block';
+                otroInput.required = true;
+                otroInput.focus();
+            } else {
+                otroContainer.style.display = 'none';
+                otroInput.required = false;
+                otroInput.value = '';
+            }
+        }
+
+        function obtenerNombreEfectivo() {
+            const select = document.getElementById('efectivoSelect');
+            if (select.value === 'OTRO') return document.getElementById('otroEfectivo').value.trim();
+            return select.value;
+        }
+
+        document.getElementById('documentoForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            if (guardando) {
+                mostrarToast('⏳ Ya se está guardando, espere...', 'warning');
+                return;
+            }
+
+            const efectivo = obtenerNombreEfectivo();
+            if (!efectivo) {
+                mostrarToast('❌ Debe seleccionar un efectivo', 'error');
+                return;
+            }
+
+            const numeroSel = document.getElementById('numeroSeleccionado').value;
+            if (!numeroSel) {
+                mostrarToast('❌ Debe seleccionar un número', 'error');
+                return;
+            }
+            
+            const tipo = document.getElementById('tipoDocumento').value;
+            const nuevoDocumento = {
+                id: Date.now(),
+                numeroSeleccionado: parseInt(numeroSel),
+                numero: generarNumeroDocumento(tipo, numeroSel),
+                tipo: tipo,
+                efectivo: efectivo,
+                referencia: document.getElementById('referencia').value.trim(),
+                descripcion: document.getElementById('descripcion').value.trim(),
+                destinatario: document.getElementById('destinatario').value.trim(),
+                fecha: new Date().toLocaleString('es-PE', { 
+                    year: 'numeric', 
+                    month: '2-digit', 
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                }),
+                timestamp: Date.now()
+            };
+
+            if (CONFIG.MODE === 'GOOGLE_SHEETS' && CONFIG.GOOGLE_SHEETS_URL) {
+                guardarEnGoogleSheets(nuevoDocumento);
+            } else {
+                guardarLocal(nuevoDocumento);
+            }
+        });
+
+        function generarNumeroDocumento(tipo, numeroSel) {
+            const año = new Date().getFullYear();
+            const numeroFormateado = numeroSel.toString().padStart(4, '0');
+            return `${tipo} N° ${numeroFormateado}-${año}-DEPSICP-DIVSICPAL-DIRREHUM-PNP`;
+        }
+
+        function guardarLocal(documento) {
+            guardando = true;
+            document.getElementById('btnRegistrar').disabled = true;
+            
+            const usados = numerosUsados[documento.tipo] || [];
+            if (usados.includes(documento.numeroSeleccionado)) {
+                mostrarToast('❌ Número ya en uso', 'error');
+                guardando = false;
+                document.getElementById('btnRegistrar').disabled = false;
+                return;
+            }
+
+            documentos.unshift(documento);
+            localStorage.setItem('documentosPNP2026', JSON.stringify(documentos));
+            calcularNumerosUsados();
+            
+            setTimeout(() => {
+                actualizarTabla();
+                actualizarEstadisticas();
+                limpiarFormulario();
+                mostrarToast('✅ Documento registrado');
+                document.getElementById('lastUpdate').textContent = `Última actualización: ${new Date().toLocaleTimeString('es-PE')}`;
+                guardando = false;
+                document.getElementById('btnRegistrar').disabled = false;
+            }, 500);
+        }
+
+        async function guardarEnGoogleSheets(documento) {
+            try {
+                guardando = true;
+                document.getElementById('btnRegistrar').disabled = true;
+                mostrarToast('⏳ Guardando...', 'warning');
+                
+                await fetch(CONFIG.GOOGLE_SHEETS_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'add', data: documento })
+                });
+
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                await cargarDocumentos();
+                limpiarFormulario();
+                mostrarToast('✅ Documento registrado');
+                
+            } catch (error) {
+                console.error('Error:', error);
+                mostrarToast('❌ Error al guardar', 'error');
+            } finally {
+                guardando = false;
+                document.getElementById('btnRegistrar').disabled = false;
+            }
+        }
+
+        async function cargarDocumentos() {
+            if (CONFIG.MODE === 'GOOGLE_SHEETS' && CONFIG.GOOGLE_SHEETS_URL) {
+                await cargarDesdeGoogleSheets();
+            } else {
+                actualizarTabla();
+            }
+        }
+
+        async function cargarDesdeGoogleSheets() {
+            try {
+                const response = await fetch(CONFIG.GOOGLE_SHEETS_URL + '?action=get');
+                const data = await response.json();
+                documentos = data.documentos || [];
+                calcularNumerosUsados();
+                actualizarTabla();
+                actualizarEstadisticas();
+                document.getElementById('lastUpdate').textContent = `Última actualización: ${new Date().toLocaleTimeString('es-PE')}`;
+            } catch (error) {
+                console.error('Error al cargar:', error);
+                actualizarTabla();
+            }
+        }
+
+        function obtenerDocumentosHoy() {
+            const hoy = new Date();
+            const hoyStr = `${hoy.getDate().toString().padStart(2, '0')}/${(hoy.getMonth() + 1).toString().padStart(2, '0')}/${hoy.getFullYear()}`;
+            return documentos.filter(doc => doc.fecha.split(',')[0] === hoyStr);
+        }
+
+        function actualizarTabla() {
+            const container = document.getElementById('tableContainer');
+            const documentosHoy = obtenerDocumentosHoy();
+            
+            if (documentosHoy.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <h3>No hay documentos HOY</h3>
+                        <p>Los documentos de hoy aparecerán aquí</p>
+                    </div>
+                `;
+                document.getElementById('pagination').innerHTML = '';
+                return;
+            }
+
+            const totalPages = Math.ceil(documentosHoy.length / itemsPerPage);
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const documentosPagina = documentosHoy.slice(startIndex, endIndex);
+
+            let html = `<table><thead><tr><th style="width: 5%">N°</th><th style="width: 28%">Número de Documento</th><th style="width: 8%">Tipo</th><th style="width: 12%">Efectivo</th><th style="width: 10%">Referencia</th><th style="width: 18%">Descripción</th><th style="width: 10%">Dirigido a</th><th style="width: 10%">Fecha/Hora</th><th style="width: 5%">Acción</th></tr></thead><tbody>`;
+
+            documentosPagina.forEach((doc) => {
+                const tipoBadgeClass = 'badge-' + doc.tipo.replace(/\s+/g, '-');
+                html += `<tr><td><span class="numero-column">${doc.numeroSeleccionado}</span></td><td><span class="numero-documento">${doc.numero}</span></td><td><span class="tipo-badge ${tipoBadgeClass}">${doc.tipo}</span></td><td>${doc.efectivo}</td><td>${doc.referencia}</td><td>${doc.descripcion}</td><td>${doc.destinatario}</td><td>${doc.fecha}</td><td><div class="actions"><button class="btn-action btn-delete" onclick="eliminarDocumento(${doc.id})">🗑️</button></div></td></tr>`;
+            });
+
+            html += `</tbody></table>`;
+            container.innerHTML = html;
+            generarPaginacion(totalPages, documentosHoy.length);
+        }
+
+        function generarPaginacion(totalPages, totalDocs) {
+            const pagination = document.getElementById('pagination');
+            
+            if (totalPages <= 1) {
+                pagination.innerHTML = '';
+                return;
+            }
+
+            let html = `<button onclick="cambiarPagina(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>← Anterior</button>`;
+
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
+                    html += `<button onclick="cambiarPagina(${i})" class="${i === currentPage ? 'active' : ''}">${i}</button>`;
+                } else if (i === currentPage - 3 || i === currentPage + 3) {
+                    html += `<span style="padding: 10px; color: #6c757d;">...</span>`;
+                }
+            }
+
+            html += `<button onclick="cambiarPagina(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>Siguiente →</button>`;
+            html += `<span style="margin-left: 20px; color: #6c757d; font-size: 0.9em;">Mostrando ${((currentPage - 1) * itemsPerPage) + 1}-${Math.min(currentPage * itemsPerPage, totalDocs)} de ${totalDocs}</span>`;
+
+            pagination.innerHTML = html;
+        }
+
+        function cambiarPagina(page) {
+            const documentosHoy = obtenerDocumentosHoy();
+            const totalPages = Math.ceil(documentosHoy.length / itemsPerPage);
+            if (page < 1 || page > totalPages) return;
+            currentPage = page;
+            actualizarTabla();
+        }
+
+        function actualizarEstadisticas() {
+            document.getElementById('totalDocumentos').textContent = documentos.length;
+            document.getElementById('totalOficio').textContent = documentos.filter(d => d.tipo === 'OFICIO').length;
+            document.getElementById('totalInforme').textContent = documentos.filter(d => d.tipo === 'INFORME').length;
+            document.getElementById('totalElevacion').textContent = documentos.filter(d => d.tipo === 'ELEVACIÓN').length;
+            document.getElementById('documentosHoy').textContent = obtenerDocumentosHoy().length;
+        }
+
+        function eliminarDocumento(id) {
+            if (confirm('¿Está seguro de eliminar este documento?')) {
+                documentos = documentos.filter(doc => doc.id !== id);
+                localStorage.setItem('documentosPNP2026', JSON.stringify(documentos));
+                calcularNumerosUsados();
+                currentPage = 1;
+                actualizarTabla();
+                actualizarEstadisticas();
+                mostrarToast('🗑️ Documento eliminado');
+            }
+        }
+
+        function limpiarFormulario() {
+            document.getElementById('documentoForm').reset();
+            document.getElementById('otroEfectivoContainer').style.display = 'none';
+            document.getElementById('otroEfectivo').required = false;
+            document.getElementById('numeroSeleccionado').value = '';
+            document.getElementById('tipoDocumento').focus();
+        }
+
+        function mostrarToast(mensaje, tipo = 'success') {
+            const toastAnterior = document.querySelector('.toast');
+            if (toastAnterior) toastAnterior.remove();
+
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            if (tipo === 'error') toast.classList.add('error');
+            if (tipo === 'warning') toast.classList.add('warning');
+            toast.textContent = mensaje;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        function mostrarEstadisticas() {
+            generarEstadisticasDiarias();
+            generarEstadisticasMensuales();
+            generarEstadisticasAnuales();
+            document.getElementById('statsModal').classList.add('active');
+        }
+
+        function cerrarEstadisticas() {
+            document.getElementById('statsModal').classList.remove('active');
+        }
+
+        function cambiarTab(tab) {
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            document.getElementById(`tab-${tab}`).classList.add('active');
+        }
+
+        function generarEstadisticasDiarias() {
+            const content = document.getElementById('tab-diarias');
+            const documentosHoy = obtenerDocumentosHoy();
+            const porTipo = {};
+            documentosHoy.forEach(doc => porTipo[doc.tipo] = (porTipo[doc.tipo] || 0) + 1);
+
+            let html = '<h3 style="color: #1a4d2e; margin-bottom: 15px;">📅 Documentos de Hoy</h3><div class="stats-grid">';
+            html += `<div class="stat-item"><h4>Total Hoy</h4><p>${documentosHoy.length}</p></div>`;
+
+            const tipos = ['OFICIO', 'INFORME', 'ELEVACIÓN', 'MEMORÁNDUM', 'MEMORÁNDUMS MÚLTIPLES', 'PASE', 'DECRETO'];
+            tipos.forEach(tipo => {
+                html += `<div class="stat-item"><h4>${tipo}</h4><p>${porTipo[tipo] || 0}</p></div>`;
+            });
+
+            html += '</div>';
+            content.innerHTML = html;
+        }
+
+        function generarEstadisticasMensuales() {
+            const content = document.getElementById('tab-mensuales');
+            const meses = {};
+            documentos.forEach(doc => {
+                const fecha = doc.fecha.split(',')[0];
+                const partes = fecha.split('/');
+                const mes = `${partes[1]}/${partes[2]}`;
+                meses[mes] = (meses[mes] || 0) + 1;
+            });
+
+            let html = '<h3 style="color: #1a4d2e; margin-bottom: 15px;">📆 Documentos por Mes</h3><div class="stats-grid">';
+            
+            const nombresMeses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+            for (let i = 1; i <= 12; i++) {
+                const mes = i.toString().padStart(2, '0');
+                const clave = `${mes}/2026`;
+                html += `<div class="stat-item" onclick="mostrarDetalleMes('${mes}', '2026')"><h4>${nombresMeses[i-1]} 2026</h4><p>${meses[clave] || 0}</p></div>`;
+            }
+
+            html += '</div><div id="detallesMes"></div>';
+            content.innerHTML = html;
+        }
+
+        function generarEstadisticasAnuales() {
+            const content = document.getElementById('tab-anuales');
+            const porTipo = {};
+            documentos.forEach(doc => porTipo[doc.tipo] = (porTipo[doc.tipo] || 0) + 1);
+
+            let html = '<h3 style="color: #1a4d2e; margin-bottom: 15px;">📊 Resumen Anual 2026</h3><div class="stats-grid">';
+            html += `<div class="stat-item"><h4>Total Año 2026</h4><p>${documentos.length}</p></div>`;
+
+            for (const [tipo, cantidad] of Object.entries(porTipo)) {
+                html += `<div class="stat-item"><h4>${tipo}</h4><p>${cantidad}</p></div>`;
+            }
+
+            html += '</div>';
+            content.innerHTML = html;
+        }
+
+        function mostrarDetalleMes(mes, año) {
+            const container = document.getElementById('detallesMes');
+            const documentosMes = documentos.filter(doc => {
+                const fecha = doc.fecha.split(',')[0];
+                const partes = fecha.split('/');
+                return partes[1] === mes && partes[2] === año;
+            });
+
+            if (documentosMes.length === 0) {
+                container.innerHTML = `<div class="month-detail"><h3>📅 Detalle de ${obtenerNombreMes(mes)} ${año}</h3><p style="text-align: center; color: #6c757d; padding: 40px;">No hay documentos en este mes</p></div>`;
+                return;
+            }
+
+            const porDia = {};
+            documentosMes.forEach(doc => {
+                const fecha = doc.fecha.split(',')[0];
+                const dia = fecha.split('/')[0];
+                if (!porDia[dia]) porDia[dia] = {};
+                porDia[dia][doc.tipo] = (porDia[dia][doc.tipo] || 0) + 1;
+            });
+
+            let html = `<div class="month-detail"><h3>📅 Detalle de ${obtenerNombreMes(mes)} ${año} - ${documentosMes.length} documentos</h3><div class="day-stats">`;
+            
+            const dias = Object.keys(porDia).sort((a, b) => parseInt(a) - parseInt(b));
+            dias.forEach(dia => {
+                const tipos = porDia[dia];
+                const totalDia = Object.values(tipos).reduce((a, b) => a + b, 0);
+                html += `<div class="day-item"><h5>Día ${dia} - Total: ${totalDia}</h5>`;
+                for (const [tipo, cantidad] of Object.entries(tipos)) {
+                    html += `<div class="type-count"><span>${tipo}</span><strong>${cantidad}</strong></div>`;
+                }
+                html += `</div>`;
+            });
+
+            html += `</div></div>`;
+            container.innerHTML = html;
+            container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function obtenerNombreMes(mes) {
+            const nombres = {'01': 'Enero', '02': 'Febrero', '03': 'Marzo', '04': 'Abril', '05': 'Mayo', '06': 'Junio', '07': 'Julio', '08': 'Agosto', '09': 'Septiembre', '10': 'Octubre', '11': 'Noviembre', '12': 'Diciembre'};
+            return nombres[mes] || mes;
+        }
+
+        function exportarExcelXLSX() {
+            if (!xlsxCargado || typeof XLSX === 'undefined') {
+                mostrarToast('❌ SheetJS aún no está cargado. Espera e intenta de nuevo.', 'error');
+                return;
+            }
+
+            if (documentos.length === 0) {
+                mostrarToast('⚠️ No hay documentos', 'warning');
+                return;
+            }
+
+            mostrarToast('⏳ Generando Excel...', 'warning');
+
+            try {
+                const docsOrdenados = [...documentos].sort((a, b) => b.id - a.id);
+                const data = [['ID', 'Numero', 'NumDocumento', 'Tipo', 'Efectivo', 'Referencia', 'Descripcion', 'Destinatario', 'Fecha']];
+
+                docsOrdenados.forEach(doc => {
+                    data.push([doc.id, doc.numeroSeleccionado, doc.numero, doc.tipo, doc.efectivo, doc.referencia, doc.descripcion, doc.destinatario, doc.fecha]);
+                });
+
+                const wb = XLSX.utils.book_new();
+                const ws = XLSX.utils.aoa_to_sheet(data);
+
+                ws['!cols'] = [{ wch: 15 }, { wch: 8 }, { wch: 50 }, { wch: 20 }, { wch: 30 }, { wch: 20 }, { wch: 50 }, { wch: 30 }, { wch: 20 }];
+
+                const headerStyle = {
+                    fill: { fgColor: { rgb: "1A4D2E" } },
+                    font: { bold: true, color: { rgb: "FFFFFF" }, sz: 11 },
+                    alignment: { horizontal: "center", vertical: "center" },
+                    border: {
+                        top: { style: "thin", color: { rgb: "000000" } },
+                        bottom: { style: "thin", color: { rgb: "000000" } },
+                        left: { style: "thin", color: { rgb: "000000" } },
+                        right: { style: "thin", color: { rgb: "000000" } }
+                    }
+                };
+
+                ['A1', 'B1', 'C1', 'D1', 'E1', 'F1', 'G1', 'H1', 'I1'].forEach(cell => {
+                    if (!ws[cell]) ws[cell] = {};
+                    ws[cell].s = headerStyle;
+                });
+
+                XLSX.utils.book_append_sheet(wb, ws, "NUMERADOR DOCUMENTOS 2026");
+
+                const fecha = new Date().toISOString().split('T')[0];
+                XLSX.writeFile(wb, `NUMERADOR_DOCUMENTOS_PNP_2026_${fecha}.xlsx`);
+
+                mostrarToast('✅ Excel exportado exitosamente');
+            } catch (error) {
+                console.error('Error:', error);
+                mostrarToast('❌ Error al generar Excel: ' + error.message, 'error');
+            }
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                cerrarEstadisticas();
+                cerrarSelectorNumeros();
+            }
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                limpiarFormulario();
+            }
+        });
+    </script>
+</body>
+</html>
